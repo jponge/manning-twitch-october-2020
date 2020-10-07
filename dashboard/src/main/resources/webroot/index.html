@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"
+          integrity="sha512-5yJ548VSnLflcRxWNqVWYeQZnby8D8fJTmYRLyvs445j1XmzR8cnWi85lcHx3CUEeAX+GrK3TqTfzOO6LKDpdw=="
+          crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vertx/3.9.3/vertx-eventbus.min.js"
+          integrity="sha512-2UUnrjl1Bs/5i6nC+tSIW4afx14yUzsmr8vTb3UKCF+pMrHYEPllgCJNqETuZLuVdwvVaG5tLtDTH5Ihhhgv4Q=="
+          crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"
+          integrity="sha512-s+xg36jbIujB2S2VKfpGmlC3T5V2TF3lY48DX7u2r9XzGzgPsa6wTpOQA7J9iffvdeBN0q9tKzRxVxw1JviZPg=="
+          crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+<canvas id="chart" width="600" height="250"></canvas>
+
+<script>
+
+  const ctx = document.getElementById("chart");
+  Chart.defaults.global.defaultFontColor = "black";
+  Chart.defaults.global.defaultFontSize = 18;
+
+  const chart = new Chart(ctx, {
+    type: "horizontalBar",
+    data: {
+      labels: [],
+      datasets: [{
+        borderColor: "#900C3F",
+        backgroundColor: "#C70039",
+        borderWidth: 3,
+        label: "Temperature",
+        data: []
+      }]
+    }
+  })
+
+  const eventBus = new EventBus("/eventbus")
+  eventBus.enableReconnect(true)
+
+  eventBus.onopen = () => {
+    eventBus.registerHandler("temperature.updates", (err, message) => {
+      let uuid = message.body.uuid
+      if (!chart.data.labels.includes(uuid)) {
+        chart.data.labels.push(uuid)
+      }
+      let index = chart.data.labels.indexOf(uuid)
+      chart.data.datasets[0].data[index] = message.body.temperature
+      chart.update()
+    })
+  }
+
+</script>
+</body>
+</html>
